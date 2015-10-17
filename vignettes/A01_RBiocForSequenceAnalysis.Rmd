@@ -49,13 +49,20 @@ Time          | Topic
 1. Experimental design
     - Keep it simple, e.g., 'control' and 'treatment' groups
     - Replicate within treatments!
-2. Wet-lab sequence preparation
+2. Wet-lab sequence preparation (figure from http://rnaseq.uoregon.edu/)
+
+    ![](http://rnaseq.uoregon.edu/img/fig-rna-seq.png)
+    
     - Record covariates, including processing day -- likely 'batch effects'
+
 3. (Illumina) Sequencing (Bentley et al., 2008,
-   [doi:10.1038/nature07517](doi:10.1038/nature07517))
-    <img src="our_figures/Solexa-bridge-pcr.jpg" height="400px" width="300px" />
+   doi:10.1038/nature07517
+
+    ![](http://www.nature.com/nature/journal/v456/n7218/images/nature07517-f1.2.jpg)
+
     - Primary output: FASTQ files of short reads and their [quality
       scores](http://en.wikipedia.org/wiki/FASTQ_format#Encoding)
+
 4. Alignment
     - Choose to match task, e.g., [Rsubread][], Bowtie2 good for ChIPseq,
       some forms of RNAseq; BWA, GMAP better for variant calling
