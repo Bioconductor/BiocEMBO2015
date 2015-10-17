@@ -7,4 +7,4 @@ introductory R / Bioconductor, short read sequence manipulation, core
 classes, aligned reads, annotation, and variants. See the
 [vignettes][] directory for additional detail.
 
-[vignettes]: ./blob/master/vignettes
+[vignettes]: ./vignettes
