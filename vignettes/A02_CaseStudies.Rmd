@@ -150,7 +150,7 @@ Option 1: `fastqc`
 
 4. Study plots and the Help -> Contents menu
 
-Option 2: `r Biocpkg("ShortRead")`
+Option 2: [ShortRead][]
 
 ```{r ShortRead, messages=FALSE}
 ## 1. attach ShortRead and BiocParallel
@@ -228,10 +228,10 @@ files for aligned reads.
    SPARCL1 gene. N.B. -- The following uses a single gene symbol, but
    we could have used 1, 2, or all gene symbols in a _vectorized_ fashion.
 
-3. Attach the `r Biocpkg("GenomicAlignments")` package for working
-   with aligned reads. Use `range()` to get the genomic coordinates
-   spanning the first and last exon of SPARCL1. Input paired reads
-   overlapping SPARCL1.
+3. Attach the [GenomicAlignments][] package for working with aligned
+   reads. Use `range()` to get the genomic coordinates spanning the
+   first and last exon of SPARCL1. Input paired reads overlapping
+   SPARCL1.
 
 4. What questions can you easily answer about these alignments? E.g.,
    how many reads overlap this region of interest?
@@ -300,21 +300,20 @@ dna <- extractTranscriptSeqs(BSgenome.Hsapiens.UCSC.hg19, cdsByTx)
 protein <- translate(dna)
 ```
 
-# biomaRt annotations
+# _biomaRt_ annotations
 
 **Exercises** Visit the [biomart](http://biomart.org) web service to
 explore the diversity of annotation offerings available.
 
-Load the `r Biocpkg("biomaRt")` package and list the available marts.
-Choose the _ensembl_ mart and list the datasets for that mart.
-Set up a mart to use the _ensembl_ mart and the
-_hsapiens_gene_ensembl_ dataset.
+Load the [biomaRt][] package and list the available marts.  Choose the
+_ensembl_ mart and list the datasets for that mart.  Set up a mart to
+use the _ensembl_ mart and the _hsapiens_gene_ensembl_ dataset.
  
-A `r Biocpkg("biomaRt")` dataset can be accessed via `getBM()`. In
-addition to the mart to be accessed, this function takes filters and
-attributes as arguments.  Use `filterOptions()` and `listAttributes()`
-to discover values for these arguments.  Call `getBM()` using
-filters and attributes of your choosing.
+A [biomaRt][] dataset can be accessed via `getBM()`. In addition to
+the mart to be accessed, this function takes filters and attributes as
+arguments.  Use `filterOptions()` and `listAttributes()` to discover
+values for these arguments.  Call `getBM()` using filters and
+attributes of your choosing.
 
 **Solutions**
 
@@ -341,9 +340,8 @@ res <- getBM(attributes =  myAttributes, filters =  myFilter,
 
 1. Efficient _R_ code
    - Vectorize!
-   - Reuse others' work Know -- `r Biocpkg("DESeq2")`,
-     `r Biocpkg("GenomicRanges")`, `r Biocpkg("Biostrings")`, ...,
-     `r CRANpkg("dplyr")`, `r CRANpkg("data.table")`, `r CRANpkg("Rcpp")`
+   - Reuse others' work Know -- [DESeq2][], [GenomicRanges][],
+     [Biostrings][], [dplyr][], [data.table][], [Rcpp][]
 2. Iteration
    - Chunk-wise
    - `open()`, read chunk(s), `close()`.
@@ -370,5 +368,20 @@ Parallel evaluation in _Bioconductor_
 - [GenomicFiles][] -- Framework for working on groups of files,
   ranges, or ranges x files
 - Bioconductor
-  [AMI](http://bioconductor.org/help/bioconductor-cloud-ami/) (Amazon
+  [AMI][] (Amazon
   Machine Instance) including pre-configured StarCluster.
+
+[BiocParallel]: https://bioconductor.org/packages/BiocParallel
+[Biostrings]: https://bioconductor.org/packages/Biostrings
+[DESeq2]: https://bioconductor.org/packages/DESeq2
+[GenomicFiles]: https://bioconductor.org/packages/GenomicFiles
+[GenomicRanges]: https://bioconductor.org/packages/GenomicRanges
+[GenomicAlignments]: https://bioconductor.org/packages/GenomicAlignments
+[ShortRead]: https://bioconductor.org/packages/ShortRead
+[biomaRt]: https://bioconductor.org/packages/biomaRt
+
+[dplyr]: https://cran.r-project.org/package=dplyr
+[data.table]: https://cran.r-project.org/package=data.table
+[Rcpp]: https://cran.r-project.org/package=Rcpp
+
+[AMI]: http://bioconductor.org/help/bioconductor-cloud-ami/
