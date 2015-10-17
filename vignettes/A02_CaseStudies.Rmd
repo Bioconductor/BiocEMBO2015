@@ -1,34 +1,35 @@
-<!--
-%% \VignetteEngine{knitr::knitr}
-%% \VignetteIndexEntry{Case Studies}
--->
+---
+title: "2. Case Studies"
+author: "Martin Morgan (martin.morgan@roswellpark.org)<br />
+    Roswell Park Cancer Institute, Buffalo, NY<br />
+    19 October, 2015"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 2
+vignette: >
+  % \VignetteIndexEntry{2. Case Studies}
+  % \VignetteEngine{knitr::rmarkdown}
+---
 
 ```{r style, echo = FALSE, results = 'asis'}
 BiocStyle::markdown()
-knitr::opts_chunk$set(cache=TRUE, tidy=FALSE)
+options(width=100, max.print=1000)
+knitr::opts_chunk$set(
+    eval=as.logical(Sys.getenv("KNITR_EVAL", "TRUE")),
+    cache=as.logical(Sys.getenv("KNITR_CACHE", "TRUE")))
 ```
 
 ```{r packages, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
-library(EMBO2014)
+suppressPackageStartupMessages({
+    library(BiocEMBO2015)
+})
 ```
 
-# Case Studies
-
-Author: Martin Morgan (<a
-    href="mailto:mtmorgan@fhcrc.org">mtmorgan@fhcrc.org</a>)<br />
-Version: `r packageDescription("EMBO2014")$Version`<br />
-Date: Monday October 20<br />
+Version: `r packageDescription("BiocEMBO2015")$Version`<br />
 Compiled: `r date()`
 
-Contents
-
-1. _R_ data manipulation
-2. Short read quality assessment
-3. Alignments and genomic annotations
-4. biomaRt annotations
-5. Performance
-
-## 1. _R_ data manipulation
+# _R_ data manipulation
 
 This case study servers as a refresher / tutorial on basic input and
 manipulation of data.
@@ -42,7 +43,7 @@ stopifnot(file.exists(fname))
 pdata <- read.delim(fname)
 ```
 ```{r echo=FALSE}
-fname <- "../inst/extdata/ALLphenoData.tsv"
+fname <- "ALLphenoData.tsv"
 stopifnot(file.exists(fname))
 pdata <- read.delim(fname)
 ```
@@ -136,14 +137,14 @@ t.test(age ~ mol.biol, bcrabl)
 boxplot(age ~ mol.biol, bcrabl)
 ```
 
-## 2. Short read quality assessment
+# Short read quality assessment
 
 Option 1: `fastqc`
 
 1. Start _fastqc_
 
 2. Select fastq.gz files from the File --> Open menu. Files are in
-   `/home/training/Data/Morgan`
+   `/mnt/nfs/practicals/day1/martin_morgan/`
 
 3. Press `OK`
 
@@ -157,7 +158,9 @@ library(ShortRead)
 library(BiocParallel)
 
 ## 2. create a vector of file paths
-fls <- dir("/home/training/Data/Morgan", pattern="*fastq.gz", full=TRUE)
+## replace 'bigdata' with '/mnt/nfs/practicals/day1/martin_morgan/'
+fls <- dir("bigdata", pattern="*fastq.gz", full=TRUE)
+stopifnot(all(file.exists(fls)))
 
 ## 3. collect statistics
 stats <- qa(fls)
@@ -169,15 +172,16 @@ browseURL(report(stats))
 Check out the qa report from all lanes
 
 ```{r ShortRead-qa-all}
-load("/home/training/Data/Morgan/qa_all.Rda")
+## replace 'bigdata' with '/mnt/nfs/practicals/day1/martin_morgan/'
+load("bigdata/qa_all.Rda")
 browseURL(report(qa_all))
 ```
 
-## 3. Alignments and annotations
+# Alignments and annotations
 
 ![](our_figures/RangeOperations.png)
 
-### Alignments
+## Alignments
 
 This data is from the `r Biocannopkg("airway")` Bioconductor
 annotation package; see the
@@ -196,7 +200,7 @@ Integrative Genomics Viewer
    the screen
 
 4. Use File -> Load from File menu to load a bam file, e.g.,
-   `/home/training/Data/Morgan/SRR1039508_sorted.bam`
+   `/mnt/nfs/practicals/day1/martin_morgan/SRR1039508_sorted.bam`
 
 5. Zoom in to a particular gene, e.g., SPARCL1, by entering the gene
    symbol in the box toward the center of the browser window. Adjust
@@ -204,7 +208,7 @@ Integrative Genomics Viewer
 
 ```
 mkdir -p ~/igv/genomes
-cp /home/training/Data/Morgan/hg19_alias.tab ~/igv/genomes/
+cp bigdata/hg19_alias.tab ~/igv/genomes/
 igv
 ```
 
@@ -232,7 +236,7 @@ files for aligned reads.
 4. What questions can you easily answer about these alignments? E.g.,
    how many reads overlap this region of interest?
 
-```{r setup-view, message=FALSE, warning=FALSE, cache=FALSE}
+```{r setup-view, message=FALSE, warning=FALSE}
 ## 1.a 'Annotation' packages
 library(TxDb.Hsapiens.UCSC.hg19.knownGene)
 library(org.Hs.eg.db)
@@ -251,7 +255,8 @@ sparcl1exons <- exByGn[[sym2eg$ENTREZID]]
 
 ## 3. Aligned reads
 library(GenomicAlignments)
-fl <- "/home/training/Data/Morgan/SRR1039508_sorted.bam"
+## replace 'bigdata' with '/mnt/nfs/practicals/day1/martin_morgan/'
+fl <- "bigdata/SRR1039508_sorted.bam"
 sparcl1gene <- range(sparcl1exons)
 param <- ScanBamParam(which=sparcl1gene)
 aln <- readGAlignmentPairs(fl, param=param)
@@ -260,9 +265,9 @@ aln <- readGAlignmentPairs(fl, param=param)
 5. As another exercise we ask how many of the reads we've input are
    compatible with the known gene model. We have to find the
    transcripts that belong to our gene, and then exons grouped by
-   transcript
+   transcript.
 
-```{r compatibleAlignments, warning=FALSE, cache=FALSE}
+```{r compatibleAlignments, warning=FALSE}
 ## 5.a. exons-by-transcript for our gene of interest
 txids <- select(TxDb.Hsapiens.UCSC.hg19.knownGene, sym2eg$ENTREZID,
     "TXID", "GENEID")$TXID
@@ -280,7 +285,7 @@ table(good)
    sequence from the appropriate reference genome. Translating the
    coding sequences to proteins.
 
-```{r coding-sequence, warning=FALSE, cache=FALSE}
+```{r coding-sequence, warning=FALSE}
 ## reset seqlevels
 restoreSeqlevels(TxDb.Hsapiens.UCSC.hg19.knownGene)
 
@@ -295,7 +300,7 @@ dna <- extractTranscriptSeqs(BSgenome.Hsapiens.UCSC.hg19, cdsByTx)
 protein <- translate(dna)
 ```
 
-## 4. biomaRt annotations
+# biomaRt annotations
 
 **Exercises** Visit the [biomart](http://biomart.org) web service to
 explore the diversity of annotation offerings available.
@@ -332,5 +337,38 @@ res <- getBM(attributes =  myAttributes, filters =  myFilter,
              values =  myValues, mart = ensembl)
 ```
 
-## 5. Performance
+# Scalable computing
 
+1. Efficient _R_ code
+   - Vectorize!
+   - Reuse others' work Know -- `r Biocpkg("DESeq2")`,
+     `r Biocpkg("GenomicRanges")`, `r Biocpkg("Biostrings")`, ...,
+     `r CRANpkg("dplyr")`, `r CRANpkg("data.table")`, `r CRANpkg("Rcpp")`
+2. Iteration
+   - Chunk-wise
+   - `open()`, read chunk(s), `close()`.
+   - e.g., `yieldSize` argument to `Rsamtools::BamFile()`
+3. Restriction
+   - Limit to columns and / or rows of interest
+   - Exploit domain-specific formats, e.g., BAM files and
+     `Rsamtools::ScanBamParam()`
+   - Use a data base
+4. Sampling
+   - Iterate through large data, retaining a manageable sample, e.g.,
+     `ShortRead::FastqSampler()`
+5. Parallel evaluation
+   - **After** writing efficient code
+   - Typically, `lapply()`-like operations
+   - Cores on a single machine ('easy'); clusters (more tedious);
+     clouds
+
+Parallel evaluation in _Bioconductor_
+
+- [BiocParallel][] -- `bplapply()` for `lapply()`-like functions,
+  increasingly used by package developers to provide easy, standard
+  way of gaining parallel evaluation.
+- [GenomicFiles][] -- Framework for working on groups of files,
+  ranges, or ranges x files
+- Bioconductor
+  [AMI](http://bioconductor.org/help/bioconductor-cloud-ami/) (Amazon
+  Machine Instance) including pre-configured StarCluster.

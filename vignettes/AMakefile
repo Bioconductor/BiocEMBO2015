@@ -1,4 +1,5 @@
 SOURCES = $(shell ls *Rmd)
+
 # LTXSOURCES = $(shell ls *Rnw)
 
 # %.pdf: %.tex
@@ -15,9 +16,9 @@ SOURCES = $(shell ls *Rmd)
 
 %.R: %.Rmd
 	@echo "KNITR_CACHE=FALSE Stangle $<"
-	KNITR_CACHE=FALSE && "$(R_HOME)"/bin/R CMD Stangle $<
+	KNITR_CACHE=FALSE "$(R_HOME)"/bin/R CMD Stangle $<
 
 all: $(SOURCES:.Rmd=.html) $(LTXSOURCES:.Rnw=.pdf)
 
 clean:
-	rm -rf *html *R *.md cache/ figure/
+	rm -rf *html *R *.md *_cache/ *_files/ cache/ figure/

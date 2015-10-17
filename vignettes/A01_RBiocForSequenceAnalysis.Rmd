@@ -1,23 +1,32 @@
-<!--
-%% \VignetteEngine{knitr::knitr}
-%% \VignetteIndexEntry{Sequences, Genes, and Genomes}
--->
+---
+title: "1. Introduction to Sequence Analysis, _R_, and _Bioconductor_"
+author: "Martin Morgan (martin.morgan@roswellpark.org)<br />
+    Roswell Park Cancer Institute, Buffalo, NY<br />
+    19 October, 2015"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 2
+vignette: >
+  % \VignetteIndexEntry{1. Introduction to Sequence Analysis, R, and Bioconductor}
+  % \VignetteEngine{knitr::rmarkdown}
+---
 
 ```{r style, echo = FALSE, results = 'asis'}
 BiocStyle::markdown()
-knitr::opts_chunk$set(cache=TRUE, tidy=FALSE)
+options(width=100, max.print=1000)
+knitr::opts_chunk$set(
+    eval=as.logical(Sys.getenv("KNITR_EVAL", "TRUE")),
+    cache=as.logical(Sys.getenv("KNITR_CACHE", "TRUE")))
 ```
 
 ```{r packages, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
-library(EMBO2014)
+suppressPackageStartupMessages({
+    library(BiocEMBO2015)
+})
 ```
-    
-# Sequences, Genes and Genomes
 
-Author: Martin Morgan (<a
-    href="mailto:mtmorgan@fhcrc.org">mtmorgan@fhcrc.org</a>)<br />
-Version: `r packageDescription("EMBO2014")$Version`<br />
-Date: Monday October 20<br />
+Version: `r packageDescription("BiocEMBO2015")$Version`<br />
 Compiled: `r date()`
 
 Objectives
@@ -27,16 +36,6 @@ Objectives
   [Bioconductor](http://bioconductor.org) concepts and resources.
 - Main assumptions: _alignment_ to known _reference_
 
-Contents (see also [Case Studies](A02_CaseStudies.html))
-
-1. Sequencing work flows
-2. _R_
-3. _Bioconductor_
-4. Sequence data representations
-5. Sequence data in _R_ / _Bioconductor_
-6. A sequence analysis package tour
-7. Scalable computing
-
 Time          | Topic                                                       
 ------------- | -----
 09:15 - 10:15 | Sequencing work flows, R, Bioconductor
@@ -45,7 +44,7 @@ Time          | Topic
 12:30         | Lunch                                                       
 13:30 -14:00  | Scalable computing
 
-## 1. Sequencing work flows
+# Sequencing work flows
 
 1. Experimental design
    - Keep it simple, e.g., 'control' and 'treatment' groups
@@ -73,7 +72,7 @@ Data movement
 
 ![Alt Sequencing Ecosystem](our_figures/SequencingEcosystem_no_bioc_pkgs.png)
 
-## 2. R
+# R
 
 Language and environment for statistical computing and graphics
 
@@ -126,7 +125,7 @@ fit <- lm(y ~x, df)                # object of class 'lm'
 methods(class=class(fit))          # introspection
 ```
 
-## 3. Bioconductor
+# Bioconductor
 
 Analysis and comprehension of high-throughput genomic data
 
@@ -213,11 +212,11 @@ Annotation
 
 <a name="package-tour"></a>
 
-## 4. Sequence data representations
+# Sequence data representations
 
 ![Alt Sequencing Ecosystem](our_figures/SequencingEcosystem.png)
 
-### DNA / amino acid sequences: FASTA files
+## DNA / amino acid sequences: FASTA files
 
 Input & manipulation: [Biostrings][]
 
@@ -234,7 +233,7 @@ Input & manipulation: [Biostrings][]
 Whole genomes: `2bit` and `.fa` formats: [rtracklayer][],
 [Rsamtools][]; [BSgenome][]
 
-### Reads: FASTQ files
+## Reads: FASTQ files
 
 Input & manipulation: [ShortRead][] `readFastq()`, `FastqStreamer()`,
 `FastqSampler()`
@@ -251,7 +250,7 @@ Input & manipulation: [ShortRead][] `readFastq()`, `FastqStreamer()`,
 - Quality scores: 'phred-like', encoded. See
   [wikipedia](http://en.wikipedia.org/wiki/FASTQ_format#Encoding)
 
-### Aligned reads: BAM files (e.g., ERR127306_chr14.bam)
+## Aligned reads: BAM files (e.g., ERR127306_chr14.bam)
 
 Input & manipulation: 'low-level' [Rsamtools][], `scanBam()`,
 `BamFile()`; 'high-level' [GenomicAlignments][]
@@ -296,7 +295,7 @@ Input & manipulation: 'low-level' [Rsamtools][], `scanBam()`,
         ... AS:i:0  XM:i:0  XO:i:0  XG:i:0  MD:Z:72 NM:i:0  XS:A:+  NH:i:5  CC:Z:=  CP:i:19653717   HI:i:0
         ... AS:i:0  XM:i:0  XO:i:0  XG:i:0  MD:Z:72 NM:i:0  XS:A:+  NH:i:5  CC:Z:=  CP:i:19921455   HI:i:1
 
-### Called variants: VCF files
+## Called variants: VCF files
 
 Input and manipulation: [VariantAnnotation][] `readVcf()`,
 `readInfo()`, `readGeno()` selectively with `ScanVcfParam()`.
@@ -345,7 +344,7 @@ Input and manipulation: [VariantAnnotation][] `readVcf()`,
           ... 1230237 ...  GT:GQ:DP:HQ 0|0:54:7:56,60 0|0:48:4:51,51 0/0:61:2
           ... 1234567 ...  GT:GQ:DP    0/1:35:4       0/2:17:2       1/1:40:3
             
-### Genome annotations: BED, WIG, GTF, etc. files
+## Genome annotations: BED, WIG, GTF, etc. files
 
 Input: [rtracklayer][] `import()`
 
@@ -382,9 +381,9 @@ Input: [rtracklayer][] `import()`
               ... exon_number "2";
               ...
               
-## 5. Sequence data in _R_ / _Bioconductor_
+# Sequence data in _R_ / _Bioconductor_
 
-### Ranges
+## Ranges
 
 Ranges represent:
 - Data, e.g., aligned reads, ChIP peaks, SNPs, CpG islands, ...
@@ -574,7 +573,7 @@ Example
   seqlevels(vcf) <- "chr22"
   ## known gene model
   require(TxDb.Hsapiens.UCSC.hg19.knownGene)
-  coding <- locateVariants(rowData(vcf),
+  coding <- locateVariants(rowRanges(vcf),
       TxDb.Hsapiens.UCSC.hg19.knownGene,
       CodingVariants())
   head(coding)
@@ -604,7 +603,7 @@ Reference
 - Export GRanges to BED, GTF, WIG, ...
 - Access UCSC genome browser
 
-## 6. A sequence analysis package tour
+# A sequence analysis package tour
 
 This very open-ended topic points to some of the most prominent
 Bioconductor packages for sequence analysis. Use the opportunity in
@@ -704,42 +703,6 @@ Visualization
   transfer data to and manipulate UCSC browser sessions.
 - Additionl packages include [ggbio][], [OmicCircos][], ...
 
-## 7. Scalable computing
-
-1. Efficient _R_ code
-   - Vectorize!
-   - Reuse others' work Know -- `r Biocpkg("DESeq2")`,
-     `r Biocpkg("GenomicRanges")`, `r Biocpkg("Biostrings")`, ...,
-     `r CRANpkg("dplyr")`, `r CRANpkg("data.table")`, `r CRANpkg("Rcpp")`
-2. Iteration
-   - Chunk-wise
-   - `open()`, read chunk(s), `close()`.
-   - e.g., `yieldSize` argument to `Rsamtools::BamFile()`
-3. Restriction
-   - Limit to columns and / or rows of interest
-   - Exploit domain-specific formats, e.g., BAM files and
-     `Rsamtools::ScanBamParam()`
-   - Use a data base
-4. Sampling
-   - Iterate through large data, retaining a manageable sample, e.g.,
-     `ShortRead::FastqSampler()`
-5. Parallel evaluation
-   - **After** writing efficient code
-   - Typically, `lapply()`-like operations
-   - Cores on a single machine ('easy'); clusters (more tedious);
-     clouds
-
-Parallel evaluation in _Bioconductor_
-
-- [BiocParallel][] -- `bplapply()` for `lapply()`-like functions,
-  increasingly used by package developers to provide easy, standard
-  way of gaining parallel evaluation.
-- [GenomicFiles][] -- Framework for working on groups of files,
-  ranges, or ranges x files
-- Bioconductor
-  [AMI](http://bioconductor.org/help/bioconductor-cloud-ami/) (Amazon
-  Machine Instance) including pre-configured StarCluster.
-
 # Resources
 
 _R_ / _Bioconductor_
@@ -788,47 +751,48 @@ Other
 
 
 [AnnotationData]: http://bioconductor.org/packages/release/BiocViews.html#___AnnotationData
-[AnnotationDbi]: http://bioconductor.org/packages/release/bioc/html/AnnotationDbi.html
-[AnnotationHub]: http://bioconductor.org/packages/release/bioc/html/AnnotationHub.html
-[BSgenome.Hsapiens.UCSC.hg19]: http://bioconductor.org/packages/release/data/annotation/html/BSgenome.Hsapiens.UCSC.hg19.html
-[BSgenome]: http://bioconductor.org/packages/release/bioc/html/BSgenome.html
-[BiocParallel]: http://bioconductor.org/packages/release/bioc/html/BiocParallel.html
-[Biostrings]: http://bioconductor.org/packages/release/bioc/html/Biostrings.html
-[Bsgenome.Hsapiens.UCSC.hg19]: http://bioconductor.org/packages/release/data/annotation/html/Bsgenome.Hsapiens.UCSC.hg19.html
-[CNTools]: http://bioconductor.org/packages/release/bioc/html/CNTools.html
-[ChIPQC]: http://bioconductor.org/packages/release/bioc/html/ChIPQC.html
-[ChIPpeakAnno]: http://bioconductor.org/packages/release/bioc/html/ChIPpeakAnno.html
-[DESeq2]: http://bioconductor.org/packages/release/bioc/html/DESeq2.html
-[DiffBind]: http://bioconductor.org/packages/release/bioc/html/DiffBind.html
-[GenomicAlignments]: http://bioconductor.org/packages/release/bioc/html/GenomicAlignments.html
-[GenomicFiles]: http://bioconductor.org/packages/release/bioc/html/GenomicFiles.html
-[GenomicRanges]: http://bioconductor.org/packages/release/bioc/html/GenomicRanges.html
-[Homo.sapiens]: http://bioconductor.org/packages/release/data/annotation/html/Homo.sapiens.html
-[IRanges]: http://bioconductor.org/packages/release/bioc/html/IRanges.html
-[KEGGREST]: http://bioconductor.org/packages/release/bioc/html/KEGGREST.html
-[PSICQUIC]: http://bioconductor.org/packages/release/bioc/html/PSICQUIC.html
-[Rsamtools]: http://bioconductor.org/packages/release/bioc/html/Rsamtools.html
-[Rsubread]: http://bioconductor.org/packages/release/bioc/html/Rsubread.html
-[ShortRead]: http://bioconductor.org/packages/release/bioc/html/ShortRead.html
-[SomaticSignatures]: http://bioconductor.org/packages/release/bioc/html/SomaticSignatures.html
-[TxDb.Hsapiens.UCSC.hg19.knownGene]: http://bioconductor.org/packages/release/data/annotation/html/TxDb.Hsapiens.UCSC.hg19.knownGene.html
-[VariantAnnotation]: http://bioconductor.org/packages/release/bioc/html/VariantAnnotation.html
-[VariantFiltering]: http://bioconductor.org/packages/release/bioc/html/VariantFiltering.html
-[VariantTools]: http://bioconductor.org/packages/release/bioc/html/VariantTools.html
 [biocViews]: http://bioconductor.org/packages/release/BiocViews.html#___Software
-[biomaRt]: http://bioconductor.org/packages/release/bioc/html/biomaRt.html
-[cn.mops]: http://bioconductor.org/packages/release/bioc/html/cn.mops.html
-[edgeR]: http://bioconductor.org/packages/release/bioc/html/edgeR.html
-[ensemblVEP]: http://bioconductor.org/packages/release/bioc/html/ensemblVEP.html 
-[h5vc]: http://bioconductor.org/packages/release/bioc/html/h5vc.html
-[limma]: http://bioconductor.org/packages/release/bioc/html/limma.html
-[metagenomeSeq]: http://bioconductor.org/packages/release/bioc/html/metagenomeSeq.html
-[org.Hs.eg.db]: http://bioconductor.org/packages/release/data/annotation/html/org.Hs.eg.db.html
-[org.Sc.sgd.db]: http://bioconductor.org/packages/release/data/annotation/html/org.Sc.sgd.db.html
-[phyloseq]: http://bioconductor.org/packages/release/bioc/html/phyloseq.html
-[rtracklayer]: http://bioconductor.org/packages/release/bioc/html/rtracklayer.html
-[snpStats]: http://bioconductor.org/packages/release/bioc/html/snpStats.html
-[Gviz]: http://bioconductor.org/packages/release/bioc/html/Gviz.html
-[epivizr]: http://bioconductor.org/packages/release/bioc/html/epivizr.html
-[ggbio]: http://bioconductor.org/packages/release/bioc/html/ggbio.html
-[OmicCircos]: http://bioconductor.org/packages/release/bioc/html/OmicCircos.html
+
+[AnnotationDbi]: http://bioconductor.org/packages/AnnotationDbi
+[AnnotationHub]: http://bioconductor.org/packages/AnnotationHub
+[BSgenome.Hsapiens.UCSC.hg19]: http://bioconductor.org/packages/BSgenome.Hsapiens.UCSC.hg19
+[BSgenome]: http://bioconductor.org/packages/BSgenome
+[BiocParallel]: http://bioconductor.org/packages/BiocParallel
+[Biostrings]: http://bioconductor.org/packages/Biostrings
+[Bsgenome.Hsapiens.UCSC.hg19]: http://bioconductor.org/packages/Bsgenome.Hsapiens.UCSC.hg19
+[CNTools]: http://bioconductor.org/packages/CNTools
+[ChIPQC]: http://bioconductor.org/packages/ChIPQC
+[ChIPpeakAnno]: http://bioconductor.org/packages/ChIPpeakAnno
+[DESeq2]: http://bioconductor.org/packages/DESeq2
+[DiffBind]: http://bioconductor.org/packages/DiffBind
+[GenomicAlignments]: http://bioconductor.org/packages/GenomicAlignments
+[GenomicFiles]: http://bioconductor.org/packages/GenomicFiles
+[GenomicRanges]: http://bioconductor.org/packages/GenomicRanges
+[Homo.sapiens]: http://bioconductor.org/packages/Homo.sapiens
+[IRanges]: http://bioconductor.org/packages/IRanges
+[KEGGREST]: http://bioconductor.org/packages/KEGGREST
+[PSICQUIC]: http://bioconductor.org/packages/PSICQUIC
+[Rsamtools]: http://bioconductor.org/packages/Rsamtools
+[Rsubread]: http://bioconductor.org/packages/Rsubread
+[ShortRead]: http://bioconductor.org/packages/ShortRead
+[SomaticSignatures]: http://bioconductor.org/packages/SomaticSignatures
+[TxDb.Hsapiens.UCSC.hg19.knownGene]: http://bioconductor.org/packages/TxDb.Hsapiens.UCSC.hg19.knownGene
+[VariantAnnotation]: http://bioconductor.org/packages/VariantAnnotation
+[VariantFiltering]: http://bioconductor.org/packages/VariantFiltering
+[VariantTools]: http://bioconductor.org/packages/VariantTools
+[biomaRt]: http://bioconductor.org/packages/biomaRt
+[cn.mops]: http://bioconductor.org/packages/cn.mops
+[edgeR]: http://bioconductor.org/packages/edgeR
+[ensemblVEP]: http://bioconductor.org/packages/ensemblVEP 
+[h5vc]: http://bioconductor.org/packages/h5vc
+[limma]: http://bioconductor.org/packages/limma
+[metagenomeSeq]: http://bioconductor.org/packages/metagenomeSeq
+[org.Hs.eg.db]: http://bioconductor.org/packages/org.Hs.eg.db
+[org.Sc.sgd.db]: http://bioconductor.org/packages/org.Sc.sgd.db
+[phyloseq]: http://bioconductor.org/packages/phyloseq
+[rtracklayer]: http://bioconductor.org/packages/rtracklayer
+[snpStats]: http://bioconductor.org/packages/snpStats
+[Gviz]: http://bioconductor.org/packages/Gviz
+[epivizr]: http://bioconductor.org/packages/epivizr
+[ggbio]: http://bioconductor.org/packages/ggbio
+[OmicCircos]: http://bioconductor.org/packages/OmicCircos

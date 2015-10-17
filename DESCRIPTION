@@ -10,6 +10,5 @@ Description: R / Bioconductor material for portions of an EMBO course
     introductory R / Bioconductor, short read sequence manipulation,
     ranges, aligned reads, annotation, and variants.
 License: Artistic-2.0
-Depends: GenomicFeatures, GenomicAlignments, ShortRead
-Suggests: BiocStyle
+Suggests: BiocStyle, GenomicFeatures, GenomicAlignments, ShortRead
 VignetteBuilder: knitr
