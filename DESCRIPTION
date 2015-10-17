@@ -1,0 +1,15 @@
+Package: BiocEMBO2015
+Type: Package
+Title: Course material for EMBO Practical Course: Analysis of
+    High-Throughput Sequencing Data, Hinxton, UK, October, 2015
+Version: 0.1.1
+Author: Martin Morgan
+Maintainer: Martin Morgan <mtmorgan@fhcrc.org>
+Description: R / Bioconductor material for portions of an EMBO course
+    on analysis of high-throughput sequence data. Material covers
+    introductory R / Bioconductor, short read sequence manipulation,
+    ranges, aligned reads, annotation, and variants.
+License: Artistic-2.0
+Depends: GenomicFeatures, GenomicAlignments, ShortRead
+Suggests: BiocStyle
+VignetteBuilder: knitr
