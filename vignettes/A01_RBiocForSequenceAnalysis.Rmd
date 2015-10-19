@@ -23,6 +23,8 @@ knitr::opts_chunk$set(
 ```{r packages, eval=TRUE, echo=FALSE, warning=FALSE, message=FALSE}
 suppressPackageStartupMessages({
     library(BiocEMBO2015)
+    library(SummarizedExperiment)
+    library(airway)
 })
 ```
 
@@ -38,9 +40,9 @@ Objectives
 
 Time          | Topic                                                       
 ------------- | -----
-09:15 - 10:15 | Sequencing work flows, R, Bioconductor
+09:15 - 10:15 | Sequencing work flows and file types
 10:15         | Tea/Coffee break                                            
-10:30 - 12:30 | Sequence data, package tour
+10:30 - 12:30 | Introduction to _R_ and _Bioconductor_
 12:30         | Lunch                                                       
 13:30 -14:00  | Scalable computing
 
@@ -669,8 +671,25 @@ Reference
 
 ## Integrated data representations: _SummarizedExperiment_
 
+![](our_figures/SE_Description.png)
+
 [SummarizedExperiment][]
 
+- 'feature' x 'sample' `assays()`
+- `colData()` data frame for desciption of samples
+- `rowRanges()` _GRanges_ / _GRangeList_ or data frame for description
+  of features
+- `exptData()` to describe the entire object
+
+    ```{r SummarizedExperiment}
+    library(SummarizedExperiment)
+    library(airway)
+    data(airway)
+    airway
+    colData(airway)
+    airway[, airway$dex %in% "trt"]
+    ```
+    
 ## Annotation: _org_, _TxDb_, _AnnotationHub_, _biomaRt_, ...
 
 - _Bioconductor_ provides extensive access to 'annotation' resources
@@ -698,6 +717,41 @@ Reference
 - Take a quick look at the [annotation work
   flow](http://bioconductor.org/help/workflows/annotation/annotation/)
   on the Bioconductor web site.
+
+
+## Scalable computing
+
+1. Efficient _R_ code
+   - Vectorize!
+   - Reuse others' work Know -- [DESeq2][], [GenomicRanges][],
+     [Biostrings][], [dplyr][], [data.table][], [Rcpp][]
+2. Iteration
+   - Chunk-wise
+   - `open()`, read chunk(s), `close()`.
+   - e.g., `yieldSize` argument to `Rsamtools::BamFile()`
+3. Restriction
+   - Limit to columns and / or rows of interest
+   - Exploit domain-specific formats, e.g., BAM files and
+     `Rsamtools::ScanBamParam()`
+   - Use a data base
+4. Sampling
+   - Iterate through large data, retaining a manageable sample, e.g.,
+     `ShortRead::FastqSampler()`
+5. Parallel evaluation
+   - **After** writing efficient code
+   - Typically, `lapply()`-like operations
+   - Cores on a single machine ('easy'); clusters (more tedious);
+     clouds
+
+Parallel evaluation in _Bioconductor_
+
+- [BiocParallel][] -- `bplapply()` for `lapply()`-like functions,
+  increasingly used by package developers to provide easy, standard
+  way of gaining parallel evaluation.
+- [GenomicFiles][] -- Framework for working on groups of files,
+  ranges, or ranges x files
+- Bioconductor [AMI][] (Amazon Machine Instance) including
+  pre-configured StarCluster, and [docker] containers.
 
 # Resources
 
@@ -793,3 +847,10 @@ Other
 [epivizr]: http://bioconductor.org/packages/epivizr
 [ggbio]: http://bioconductor.org/packages/ggbio
 [OmicCircos]: http://bioconductor.org/packages/OmicCircos
+
+[dplyr]: https://cran.r-project.org/package=dplyr
+[data.table]: https://cran.r-project.org/package=data.table
+[Rcpp]: https://cran.r-project.org/package=Rcpp
+
+[AMI]: http://bioconductor.org/help/bioconductor-cloud-ami/
+[docker]: http://bioconductor.org/help/docker/

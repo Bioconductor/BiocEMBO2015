@@ -177,15 +177,102 @@ load("bigdata/qa_all.Rda")
 browseURL(report(qa_all))
 ```
 
-# Alignments and annotations
+# Annotation
 
-![](our_figures/RangeOperations.png)
+`org` packages
 
-## Alignments
+- symbol mapping
 
-This data is from the `r Biocannopkg("airway")` Bioconductor
-annotation package; see the
-[vignette](http://bioconductor.org/packages/release/data/experiment/vignettes/airway/inst/doc/airway.html) for details
+    ```{r org}
+    library(airway)
+    data(airway)
+    library(org.Hs.eg.db)
+    ensid <- head(rownames(airway))
+    mapIds(org.Hs.eg.db, ensid, "SYMBOL", "ENSEMBL")
+    keytypes(org.Hs.eg.db)
+    ```
+
+`TxDb` packages
+
+- known gene models, as _GRanges_ / _GRangesList_
+- Easy to make your own, from GFF files
+  `GenomicFeatures::makeTxDbFromGFF()` & friends
+
+    ```{r txdb}
+    library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+    txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+    exons(txdb)
+    exonsBy(txdb, "tx")
+    p <- promoters(txdb)
+    ```
+
+`BSgenome`
+
+- Whole-genome sequences
+- Possible to make your own, or use other formats --
+  `Rsamtools::FaFile()`, `tracklayer::TwoBitFile()`
+  
+    ```{r BSgenome}
+    library(BSgenome.Hsapiens.UCSC.hg19)
+    bsgenome <- BSgenome.Hsapiens.UCSC.hg19
+    ps <- getSeq(bsgenome, p)
+    ps
+    hist(letterFrequency(ps, "GC", as.prob=TRUE))
+    ```
+        
+[AnnotationHub][]
+
+- easily accessible genome-scale resources
+
+Example: Ensembl 'GTF' files to _R_ / _Bioconductor_ GRanges and _TxDb_
+
+```{r annotationhub-gtf, eval=FALSE}
+library(AnnotationHub)
+hub <- AnnotationHub()
+hub
+query(hub, c("Ensembl", "80", "gtf"))
+## ensgtf = display(hub)                   # visual choice
+hub["AH47107"]
+gtf <- hub[["AH47107"]]
+gtf
+txdb <- GenomicFeatures::makeTxDbFromGRanges(gtf)
+```
+
+Example: non-model organism `OrgDb` packages
+
+```{r annotationhub-orgdb, eval=FALSE}
+library(AnnotationHub)
+hub <- AnnotationHub()
+query(hub, "OrgDb")
+```
+
+Example: Map Roadmap epigenomic marks to hg38
+
+- Roadmap BED file as _GRanges_
+
+    ```{r annotationhub-roadmap, eval=FALSE}
+    library(AnnotationHub)
+    hub <- AnnotationHub()
+    query(hub , c("EpigenomeRoadMap", "E126", "H3K4ME2"))
+    E126 <- hub[["AH29817"]]
+    ```
+
+- UCSC 'liftOver' file to map coordinates
+
+    ```{r annotationhub-liftover, eval=FALSE}
+    query(hub , c("hg19", "hg38", "chainfile"))
+    chain <- hub[["AH14150"]]
+    ```
+
+- lift over -- possibly one-to-many mapping, so _GRanges_ to _GRangesList_
+
+    ```{r liftover, eval=FALSE}
+    library(rtracklayer)
+    E126hg38 <- liftOver(E126, chain)
+    E126hg38
+    ```
+
+# Alignments
 
 Integrative Genomics Viewer
 
@@ -236,70 +323,69 @@ files for aligned reads.
 4. What questions can you easily answer about these alignments? E.g.,
    how many reads overlap this region of interest?
 
-```{r setup-view, message=FALSE, warning=FALSE}
-## 1.a 'Annotation' packages
-library(TxDb.Hsapiens.UCSC.hg19.knownGene)
-library(org.Hs.eg.db)
-
-## 1.b -- map 'seqlevels' as recorded in the TxDb file to those in the
-## BAM file
-fl <- "~/igv/genomes/hg19_alias.tab"
-map <- with(read.delim(fl, header=FALSE, stringsAsFactors=FALSE),
-    setNames(V1, V2))
-seqlevels(TxDb.Hsapiens.UCSC.hg19.knownGene, force=TRUE) <- map
-
-## 2. Symbol -> Entrez ID -> Gene coordinates
-sym2eg <- select(org.Hs.eg.db, "SPARCL1", "ENTREZID", "SYMBOL")
-exByGn <- exonsBy(TxDb.Hsapiens.UCSC.hg19.knownGene, "gene")
-sparcl1exons <- exByGn[[sym2eg$ENTREZID]]
-
-## 3. Aligned reads
-library(GenomicAlignments)
-## replace 'bigdata' with '/mnt/nfs/practicals/day1/martin_morgan/'
-fl <- "bigdata/SRR1039508_sorted.bam"
-sparcl1gene <- range(sparcl1exons)
-param <- ScanBamParam(which=sparcl1gene)
-aln <- readGAlignmentPairs(fl, param=param)
-```
-
+    ```{r setup-view, message=FALSE, warning=FALSE}
+    ## 1.a 'Annotation' packages
+    library(TxDb.Hsapiens.UCSC.hg19.knownGene)
+    library(org.Hs.eg.db)
+    txdb <- TxDb.Hsapiens.UCSC.hg19.knownGene
+    
+    ## 1.b -- map 'seqlevels' as recorded in the TxDb file to those in the
+    ## BAM file
+    fl <- "~/igv/genomes/hg19_alias.tab"
+    map <- with(read.delim(fl, header=FALSE, stringsAsFactors=FALSE),
+        setNames(V1, V2))
+    seqlevels(txdb, force=TRUE) <- map
+    
+    ## 2. Symbol -> Entrez ID -> Gene coordinates
+    sym2eg <- mapIds(org.Hs.eg.db, "SPARCL1", "ENTREZID", "SYMBOL")
+    exByGn <- exonsBy(txdb, "gene")
+    sparcl1exons <- exByGn[[sym2eg]]
+    
+    ## 3. Aligned reads
+    library(GenomicAlignments)
+    ## replace 'bigdata' with '/mnt/nfs/practicals/day1/martin_morgan/'
+    fl <- "bigdata/SRR1039508_sorted.bam"
+    sparcl1gene <- range(sparcl1exons)
+    param <- ScanBamParam(which=sparcl1gene)
+    aln <- readGAlignmentPairs(fl, param=param)
+    ```
+    
 5. As another exercise we ask how many of the reads we've input are
    compatible with the known gene model. We have to find the
    transcripts that belong to our gene, and then exons grouped by
    transcript.
 
-```{r compatibleAlignments, warning=FALSE}
-## 5.a. exons-by-transcript for our gene of interest
-txids <- select(TxDb.Hsapiens.UCSC.hg19.knownGene, sym2eg$ENTREZID,
-    "TXID", "GENEID")$TXID
-exByTx <- exonsBy(TxDb.Hsapiens.UCSC.hg19.knownGene, "tx")[txids]
-
-## 5.b compatible alignments
-hits <- findCompatibleOverlaps(query=aln, subject=exByTx)
-good <- seq_along(aln) %in% queryHits(hits)
-table(good)
-```
-
+    ```{r compatibleAlignments, warning=FALSE}
+    ## 5.a. exons-by-transcript for our gene of interest
+    txids <- select(txdb, sym2eg, "TXID", "GENEID")$TXID
+    exByTx <- exonsBy(txdb, "tx")[txids]
+    
+    ## 5.b compatible alignments
+    hits <- findCompatibleOverlaps(query=aln, subject=exByTx)
+    good <- seq_along(aln) %in% queryHits(hits)
+    table(good)
+    ```
+    
 6. Finally, let's go from gene model to protein coding
    sequence. (a) Extract CDS regions grouped by transcript, select just
    transcripts we're interested in, (b) attach and then extract the coding
    sequence from the appropriate reference genome. Translating the
    coding sequences to proteins.
 
-```{r coding-sequence, warning=FALSE}
-## reset seqlevels
-restoreSeqlevels(TxDb.Hsapiens.UCSC.hg19.knownGene)
-
-## a. cds coordinates, grouped by transcript
-txids <- select(TxDb.Hsapiens.UCSC.hg19.knownGene, sym2eg$ENTREZID,
-    "TXID", "GENEID")$TXID
-cdsByTx <- cdsBy(TxDb.Hsapiens.UCSC.hg19.knownGene, "tx")[txids]
-
-## b. coding sequence from relevant reference genome
-library(BSgenome.Hsapiens.UCSC.hg19)
-dna <- extractTranscriptSeqs(BSgenome.Hsapiens.UCSC.hg19, cdsByTx)
-protein <- translate(dna)
-```
-
+    ```{r coding-sequence, warning=FALSE}
+    ## reset seqlevels
+    restoreSeqlevels(txdb)
+    
+    ## a. cds coordinates, grouped by transcript
+    txids <- mapIds(txdb, sym2eg, "TXID", "GENEID")
+    cdsByTx <- cdsBy(txdb, "tx")[txids]
+    
+    ## b. coding sequence from relevant reference genome
+    library(BSgenome.Hsapiens.UCSC.hg19)
+    dna <- extractTranscriptSeqs(BSgenome.Hsapiens.UCSC.hg19, cdsByTx)
+    protein <- translate(dna)
+    ```
+    
 # _biomaRt_ annotations
 
 **Exercises** Visit the [biomart](http://biomart.org) web service to
@@ -336,41 +422,7 @@ res <- getBM(attributes =  myAttributes, filters =  myFilter,
              values =  myValues, mart = ensembl)
 ```
 
-# Scalable computing
-
-1. Efficient _R_ code
-   - Vectorize!
-   - Reuse others' work Know -- [DESeq2][], [GenomicRanges][],
-     [Biostrings][], [dplyr][], [data.table][], [Rcpp][]
-2. Iteration
-   - Chunk-wise
-   - `open()`, read chunk(s), `close()`.
-   - e.g., `yieldSize` argument to `Rsamtools::BamFile()`
-3. Restriction
-   - Limit to columns and / or rows of interest
-   - Exploit domain-specific formats, e.g., BAM files and
-     `Rsamtools::ScanBamParam()`
-   - Use a data base
-4. Sampling
-   - Iterate through large data, retaining a manageable sample, e.g.,
-     `ShortRead::FastqSampler()`
-5. Parallel evaluation
-   - **After** writing efficient code
-   - Typically, `lapply()`-like operations
-   - Cores on a single machine ('easy'); clusters (more tedious);
-     clouds
-
-Parallel evaluation in _Bioconductor_
-
-- [BiocParallel][] -- `bplapply()` for `lapply()`-like functions,
-  increasingly used by package developers to provide easy, standard
-  way of gaining parallel evaluation.
-- [GenomicFiles][] -- Framework for working on groups of files,
-  ranges, or ranges x files
-- Bioconductor
-  [AMI][] (Amazon
-  Machine Instance) including pre-configured StarCluster.
-
+[AnnotationHub]: https://bioconductor.org/packages/AnnotationHub
 [BiocParallel]: https://bioconductor.org/packages/BiocParallel
 [Biostrings]: https://bioconductor.org/packages/Biostrings
 [DESeq2]: https://bioconductor.org/packages/DESeq2
@@ -379,9 +431,3 @@ Parallel evaluation in _Bioconductor_
 [GenomicAlignments]: https://bioconductor.org/packages/GenomicAlignments
 [ShortRead]: https://bioconductor.org/packages/ShortRead
 [biomaRt]: https://bioconductor.org/packages/biomaRt
-
-[dplyr]: https://cran.r-project.org/package=dplyr
-[data.table]: https://cran.r-project.org/package=data.table
-[Rcpp]: https://cran.r-project.org/package=Rcpp
-
-[AMI]: http://bioconductor.org/help/bioconductor-cloud-ami/
