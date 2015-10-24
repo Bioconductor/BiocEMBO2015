@@ -1,0 +1,218 @@
+---
+title: "Course Notes"
+author: "Martin Morgan"
+date: "19/10/2015"
+output: html_document
+vignette: >
+  % \VignetteIndexEntry{Course Notes}
+  % \VignetteEngine{knitr::rmarkdown}
+---
+
+These notes were created during the course, and server as a transcript
+of topics covered.
+
+# Intro to sequencing
+
+Workflow
+
+1. Experimental design
+2. Wet lab sample prep, etc
+3. Sequencing
+    - FASTQ file of reads and their quality scores
+    - Quality assessment (FASTQ program), trimming or 
+      removing contanimants, removing optical duplicates
+      (FASTX, trimomatic)
+    - Quality with respect to _your_ research question
+4. Alignment / (assembly)
+    - BAM file of aligned reads to a known reference genome
+    - Aligners: vary from simple to use to hard to use, from
+      'good enough' alignments (for RNA-seq of known genes,
+      ChIP-seq) to high-quality (e.g., DNA-seq calling
+      variants)
+    - Bowtie2 (easy, good enough), gmap (excellent, hard
+      to use).
+    - Purpose-built tools that align and reduce. E.g., 
+      RNA-seq known gene differential expression --
+      [kalisto][], sailfish
+5. Reduction
+    - BED of called peaks in a ChIP-seq experiment
+      (e.g., MACS, FindPeaks)
+    - VCF of called variants (GATK, bcftools)
+    - Count table (e.g., tsv) in an RNA-seq experiment
+      (python htseq2; 
+      `GenomicFeatures::summarizeOverlaps()`)
+6. (Statistical) analysis
+    - Why _statistical_ analysis? data is fundamentally 
+      huge; biological questions are framed in terms of
+      classical statistics, e.g., designed experiments,
+      hypothesis testing; technical and other artifacts,
+      e.g., GC bias, mapability, [batch effects][]
+    - Appropriate tools: able to cope with statistics; 
+      access to advanced statistical methods; 
+      analysis _has_ to be reproducible (some sort of 
+      scripting); processing large amounts of data is _not_
+      the primary criterion.
+    - _R_ / _Bioconductor_ is the best most awesome tool.
+7. Comprehension
+    - .Rmd or similar documenting the work flow, including
+      inputs, analysis steps, tables, figures,
+      interpertation...
+
+## FASTQ and BAM files
+
+View from the Linux command line...
+
+- `zcat *fastq.gz  | less`
+- `samtools view -h *bam`
+
+... or within _R_ / _Bioconductor_: fastq files
+
+```{r ShortRead-fastq}
+library(ShortRead)
+strm = FastqStreamer("bigdata/SRR1039508_1.fastq.gz", 100000)
+fq = yield(strm)
+fq
+sread(fq)
+quality(fq)
+```
+
+# _R_
+
+- Statistical programming language
+- _Vectorized_ (works efficiently on vectors; vector
+  notation is very expressive and compact)
+- _Objects_ help to coordinate management of related
+  data
+- _Introspection_ helps discover what can be done with
+  objects.
+
+```{r r-intro}
+x = rnorm(1000)
+y = x + rnorm(1000, sd=.5)
+df = data.frame(x=x, y=y)
+plot(y ~ x, df)
+fit = lm(y ~ x, df)
+class(fit)
+methods(class=class(fit))
+methods("anova")
+```
+
+Help!
+
+```{r help, eval=FALSE}
+?log
+?plot    # generic 'plot'
+?plot.lm # plot for objects of class 'lm'
+```
+
+# _Bioconductor_
+
+- Main [web site][], including [biocViews][]
+- Package landing pages, e.g., [ChIPseeker][]
+- The [support forum][]
+- 1100+ packages for analysis and comprehension of
+  high-throughput genomic data: sequencing (RNA, ChIP, 
+  variants, ...), microarray (expression, methylation,
+  copy number, etc), flow cytometry, proteomics, 
+  imaging, ...
+
+Extensive use of 'S4' classes
+
+- `fit` (from `lm()`) is an example of an S3 class
+- `sread(fq)` returned a _DNAStringSet_, an example of an
+  S4 class
+
+```{r S4}
+library(ShortRead)
+strm = FastqStreamer("bigdata/SRR1039508_1.fastq.gz", 100000)
+fq = yield(strm)          # 'ShortReadQ' S4 class
+class(fq)                 # introspection
+methods(class=class(fq))  
+reads = sread(fq)         # accessor -- get the reads
+reads                     # 'DNAStringSet' S4 class
+methods(class=class(reads))
+gc = letterFrequency(reads, "GC", as.prob=TRUE)
+hist(gc)
+```
+
+Help!
+
+```{r S4-help, eval=FALSE}
+?DNAStringSet      # class, and often frequently used methods
+?letterFrequency   # generic
+methods("letterFrequency")
+?"letterFrequency,XStringSet-method"
+```
+
+# And...
+
+Key software packages...
+
+- [ShortRead][] for FASTQ files
+- [GenomicAlignments][] for aligned reads
+- [VariantAnnotation][] for VCF files
+- [rtracklayer][] `import()` to import BED, WIG, GFF, GTF, 
+  ..., files
+- [Gviz][] for visualization of genomic data; 
+  [ReportTools][] for reports;
+  [shiny][] for interactive visualizations
+  
+... and classes
+
+- _DNAStringSet_, _DNAString_ for sequence data
+- _GRanges_, _GRangesList_ for representing coordinates
+  in genome space
+- _SummarizedExperiment_ (_ExpressionSet_): integrated
+  data contains: rows x columns (features x samples)
+    - `assays()`
+    - `rowRanges()` for annotations on rows
+    - `colData()` for column annotations
+
+Annotation
+
+- Pure 'data' packages
+- Identifier mapping `org.*` packages
+- Gene models with `TxDb.*` packages
+- Whole genome sequences `BSgenome.*` packages
+- [biomaRt][] for accessing ENSEMBL-based biomarts;
+  [AnnotationHub][] for genome-scale annotation resources
+
+Strategies for working with big data
+
+- Write efficient _R_ code -- vectorized
+- Process data in chunks, e.g., `FastqStreamer()`,
+  `Rsamtools::BamFile(..., yieldSize=1000000)`;
+  `GenomicFiles::reduceByYield()` (see examples on 
+  `?reduceByYield`)
+- Process in parallel [BiocParallel][]
+
+All material on the [course materials][] page
+
+[AnnotationHub]: http://bioconductor.org/packages/AnnotationHub
+[BiocParallel]: http://bioconductor.org/packages/BiocParallel
+[ChIPseeker]: http://bioconductor.org/packages/ChIPseeker
+[GenomicAlignments]: http://bioconductor.org/packages/GenomicAlignments
+[Gviz]: http://bioconductor.org/packages/Gviz
+[ReportTools]: http://bioconductor.org/packages/ReportingTools
+[ShortRead]: http://bioconductor.org/packages/ShortRead
+[VariantAnnotation]: http://bioconductor.org/packages/VariantAnnotation
+[biomaRt]: http://bioconductor.org/packages/biomaRt
+[rtracklayer]: http://bioconductor.org/packages/rtracklayer
+[shiny]: https://cran.r-project.org/package=shiny
+
+[support forum]: https://support.bioconductor.org
+[batch effects]: https://github.com/Bioconductor/BiocUruguay2015/blob/master/vignettes/our_figures/nrg2825-f2.jpg
+[biocViews]: http://bioconductor.org/packages/release/
+[course materials]: http://bioconductor.org/help/course-materials
+[kalisto]: http://pachterlab.github.io/kallisto/
+[web site]: http://bioconductor.org
+
+
+
+
+
+
+
+
+
+
